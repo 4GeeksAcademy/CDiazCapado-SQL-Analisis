@@ -25,13 +25,24 @@ def connect():
 # Run student-defined queries from queries.sql
 def run_queries_from_file(engine, filepath):
     try:
-        with open(filepath, 'r') as file:
+        with open(filepath, "r", encoding="utf-8-sig") as file:
             content = file.read()
-        queries = [q.strip() for q in content.split(';') if q.strip()]
-        for i, query in enumerate(queries, start=0):
-            # Skip if it's just a comment
-            if query.startswith('--') or not any(c.isalnum() for c in query):
+
+        # quitar comentarios línea a línea
+        clean_lines = []
+        for line in content.splitlines():
+            stripped = line.strip()
+            if not stripped:
                 continue
+            if stripped.startswith("--"):
+                continue
+            clean_lines.append(line)
+
+        clean_sql = "\n".join(clean_lines)
+
+        queries = [q.strip() for q in clean_sql.split(";") if q.strip()]
+
+        for i, query in enumerate(queries, start=1):
             try:
                 print(f"\n🔎 Query {i}:\n{query}")
                 df = pd.read_sql(query, con=engine)
@@ -40,8 +51,6 @@ def run_queries_from_file(engine, filepath):
                 print(f"❌ Error in Query {i}: {e}")
     except Exception as e:
         print(f"❌ Error processing queries from {filepath}: {e}")
-
-
 # Entry point
 if __name__ == "__main__":
     engine = connect()
